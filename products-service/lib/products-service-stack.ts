@@ -20,7 +20,12 @@ export class ProductsServiceStack extends cdk.Stack {
 
     const getProductsIntegration = new HttpLambdaIntegration('getProductsIntegration', getProductsLambda);
 
-    const http = new apigateway.HttpApi(this, 'ProductsServiceHTTP');
+    const http = new apigateway.HttpApi(this, 'ProductsServiceHTTP', {
+      corsPreflight: {
+        allowOrigins: ['*'],
+        allowMethods: [apigateway.CorsHttpMethod.ANY]
+      }
+    });
 
     http.addRoutes({
       path: '/products',
