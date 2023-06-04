@@ -12,19 +12,34 @@ export class ProductsServiceStack extends cdk.Stack {
     super(scope, id, props);
 
 
-    const getProductsLambda = new lambda.Function(this, 'ProductsServiceAPI', {
+    const getProductsLambda = new lambda.Function(this, 'getProductsHandler', {
       runtime: lambda.Runtime.NODEJS_18_X,
       code: lambda.Code.fromAsset('lambda'),
-      handler: 'get-products.handler'
+      handler: 'getProductsList.handler'
     })
 
-    const productsIntegration = new HttpLambdaIntegration('ProductsIntegration', getProductsLambda);
+    const getProductsIntegration = new HttpLambdaIntegration('getProductsIntegration', getProductsLambda);
 
     const http = new apigateway.HttpApi(this, 'ProductsServiceHTTP');
 
     http.addRoutes({
       path: '/products',
-      integration: productsIntegration,
+      integration: getProductsIntegration,
+      methods: [apigateway.HttpMethod.GET]
+    })
+
+    const getProductsByIdLambda = new lambda.Function(this, 'getProductsByIdHandler', {
+      runtime: lambda.Runtime.NODEJS_18_X,
+      code: lambda.Code.fromAsset('lambda'),
+      handler: 'getProductsById.handler'
+    })
+
+    const getProductsByIdIntegration = new HttpLambdaIntegration('getProductsByIdIntegration', getProductsByIdLambda);
+
+
+    http.addRoutes({
+      path: '/products/{productId}',
+      integration: getProductsByIdIntegration,
       methods: [apigateway.HttpMethod.GET]
     })
 
