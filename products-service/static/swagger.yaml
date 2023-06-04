@@ -1,0 +1,54 @@
+openapi: "3.0.1"
+info:
+  title: "ProductsServiceHTTP"
+  version: "2023-06-04 21:06:47UTC"
+servers:
+- url: "https://z21ypzzft3.execute-api.eu-north-1.amazonaws.com/{basePath}"
+  variables:
+    basePath:
+      default: ""
+tags:
+- name: "aws:cloudformation:stack-id"
+  x-amazon-apigateway-tag-value: "arn:aws:cloudformation:eu-north-1:144272146271:stack/ProductsServiceStack/9c3bd030-031b-11ee-9f87-0eaf52ab2004"
+- name: "aws:cloudformation:stack-name"
+  x-amazon-apigateway-tag-value: "ProductsServiceStack"
+- name: "aws:cloudformation:logical-id"
+  x-amazon-apigateway-tag-value: "ProductsServiceHTTP690FD657"
+paths:
+  /products:
+    get:
+      responses:
+        default:
+          description: "Default response for GET /products"
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: "2.0"
+        type: "aws_proxy"
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:eu-north-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-north-1:144272146271:function:ProductsServiceStack-getProductsHandlerFF6E13BD-yPVzp0Z603ee/invocations"
+        connectionType: "INTERNET"
+  /products/{productId}:
+    get:
+      responses:
+        default:
+          description: "Default response for GET /products/{productId}"
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: "2.0"
+        type: "aws_proxy"
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:eu-north-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-north-1:144272146271:function:ProductsServiceStack-getProductsByIdHandler766C24C-06ZRCcQmYwGb/invocations"
+        connectionType: "INTERNET"
+    parameters:
+    - name: "productId"
+      in: "path"
+      description: "Generated path parameter for productId"
+      required: true
+      schema:
+        type: "string"
+x-amazon-apigateway-cors:
+  allowMethods:
+  - "*"
+  maxAge: -42
+  allowCredentials: false
+  allowOrigins:
+  - "*"
+x-amazon-apigateway-importexport-version: "1.0"
