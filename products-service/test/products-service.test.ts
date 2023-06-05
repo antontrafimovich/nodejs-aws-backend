@@ -1,17 +1,16 @@
-// import * as cdk from 'aws-cdk-lib';
-// import { Template } from 'aws-cdk-lib/assertions';
-// import * as ProductsService from '../lib/products-service-stack';
+import { handler as getProducts } from './../lambda/getProductsList.js'
 
-// example test. To run these tests, uncomment this file along with the
-// example resource in lib/products-service-stack.ts
-test('SQS Queue Created', () => {
-//   const app = new cdk.App();
-//     // WHEN
-//   const stack = new ProductsService.ProductsServiceStack(app, 'MyTestStack');
-//     // THEN
-//   const template = Template.fromStack(stack);
+describe("getProducts", () => {
+    test("getProducts should return all the products", async () => {
+        const productsResult: { statusCode: number, headers: any, body: any } = await getProducts();
 
-//   template.hasResourceProperties('AWS::SQS::Queue', {
-//     VisibilityTimeout: 300
-//   });
-});
+        expect(productsResult.statusCode).toBe(200);
+        expect(productsResult.headers['Content-Type']).toBeDefined();
+        expect(productsResult.headers['Content-Type']).toBe('application/json');
+
+        const products = JSON.parse(productsResult.body);
+
+        expect(Array.isArray(products)).toBeTruthy();
+        expect(products.length).toBeGreaterThan(0);
+    })
+})
