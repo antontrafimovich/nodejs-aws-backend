@@ -1,6 +1,6 @@
-const products = require('./products.json')
+import products from './products.json'
 
-exports.handler = async (event) => {
+export const handler = async (event: any) => {
     if (!products) {
         return {
             statusCode: 404,

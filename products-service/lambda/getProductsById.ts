@@ -1,9 +1,11 @@
-const products = require('./products.json')
 
-exports.handler = async (event) => {
+import products from './products.json'
+import { Product } from '../model/Product';
+
+export const handler = async (event: any) => {
     const { productId } = event.pathParameters;
 
-    const product = products.find(product => product.id === productId)
+    const product = (products as Product[]).find(product => product.id === productId)
 
     if (!product) {
         return {

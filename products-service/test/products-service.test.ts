@@ -1,9 +1,9 @@
-import { handler as getProducts } from './../lambda/getProductsList.js'
-import { handler as getProductsById } from './../lambda/getProductsById.js'
+import { handler as getProducts } from './../lambda/getProductsList'
+import { handler as getProductsById } from './../lambda/getProductsById'
 
 describe("getProducts", () => {
     test("getProducts should return all the products", async () => {
-        const productsResult: { statusCode: number, headers: any, body: any } = await getProducts();
+        const productsResult: { statusCode: number, headers: any, body: any } = await getProducts(null);
 
         expect(productsResult.statusCode).toBe(200);
         expect(productsResult.headers['Content-Type']).toBeDefined();
