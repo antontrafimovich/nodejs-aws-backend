@@ -1,16 +1,16 @@
 #!/usr/bin/env node
-import 'source-map-support/register';
-import * as cdk from 'aws-cdk-lib';
-import { ProductsServiceStack } from '../lib/products-service-stack';
+import "source-map-support/register";
+import * as cdk from "aws-cdk-lib";
+import { ProductsServiceStack } from "../lib/products-service-stack";
 
-import 'dotenv/config';
+import "dotenv/config";
 
 const app = new cdk.App();
-new ProductsServiceStack(app, 'ProductsServiceStack', {
+new ProductsServiceStack(app, "ProductsServiceStack", {
   env: {
     account: process.env.AWS_ACCOUNT,
-    region: process.env.AWS_REGION
-  }
+    region: process.env.AWS_REGION,
+  },
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */
