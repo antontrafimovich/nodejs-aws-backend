@@ -1,15 +1,14 @@
-import * as sdk from "aws-sdk";
+import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
 
-const ddb = new sdk.DynamoDB.DocumentClient();
+const ddb = new DynamoDBClient({ region: process.env.REGION });
 
 const query = async (id: string) => {
-  const queryResults = await ddb
-    .query({
-      TableName: process.env.TABLE_NAME as string,
-      KeyConditionExpression: "id = :id",
-      ExpressionAttributeNames: { ":id": id },
-    })
-    .promise();
+  const command = new QueryCommand({
+    TableName: process.env.TABLE_NAME as string,
+    KeyConditionExpression: "id = :id",
+    ExpressionAttributeValues: { ":id": { S: id } },
+  });
+  const queryResults = await ddb.send(command);
 
   return queryResults;
 };
