@@ -72,11 +72,39 @@ export class ProductsServiceStack extends cdk.Stack {
       methods: [apigateway.HttpMethod.GET],
     });
 
-    // The code that defines your stack goes here
+    const createProductLambda = new NodejsFunction(
+      this,
+      "createProductHandler",
+      {
+        runtime: lambda.Runtime.NODEJS_18_X,
+        entry: path.join(__dirname, "../", "lambda", "createProduct.ts"),
+        handler: "handler",
+        initialPolicy: [
+          new PolicyStatement({
+            effect: Effect.ALLOW,
+            actions: ["dynamodb:PutItem"],
+            resources: [process.env.DYNAMO_DB_TABLE_ARN as string],
+          }),
+        ],
+        environment: {
+          TABLE_NAME: "AT_Products",
+          REGION: process.env.REGION as string,
+        },
+        bundling: {
+          externalModules: ["@aws-sdk/client-dynamodb"],
+        },
+      }
+    );
 
-    // example resource
-    // const queue = new sqs.Queue(this, 'ProductsServiceQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
+    const createProductIntegration = new HttpLambdaIntegration(
+      "createProductIntegration",
+      createProductLambda
+    );
+
+    http.addRoutes({
+      path: "/products",
+      integration: createProductIntegration,
+      methods: [apigateway.HttpMethod.POST],
+    });
   }
 }
