@@ -9,14 +9,37 @@ import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Construct } from "constructs";
 import * as path from "node:path";
 
+const PRODUCTS_TABLE_NAME = "AT_Products";
+const STOCKS_TABLE_NAME = "AT_Stocks";
+
 export class ProductsServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    console.log(`${process.env.DYNAMO_DB_ARN}/${STOCKS_TABLE_NAME}`);
 
     const getProductsLambda = new NodejsFunction(this, "getProductsHandler", {
       runtime: lambda.Runtime.NODEJS_18_X,
       entry: path.join(__dirname, "../", "lambda", "getProductsList.ts"),
       handler: "handler",
+      environment: {
+        PRODUCTS_TABLE_NAME,
+        STOCKS_TABLE_NAME,
+        REGION: process.env.REGION as string,
+      },
+      initialPolicy: [
+        new PolicyStatement({
+          effect: Effect.ALLOW,
+          actions: ["dynamodb:Scan"],
+          resources: [
+            `${process.env.DYNAMO_DB_ARN}/${PRODUCTS_TABLE_NAME}`,
+            `${process.env.DYNAMO_DB_ARN}/${STOCKS_TABLE_NAME}`,
+          ],
+        }),
+      ],
+      bundling: {
+        externalModules: ["@aws-sdk/client-dynamodb"],
+      },
     });
 
     const getProductsIntegration = new HttpLambdaIntegration(
@@ -47,12 +70,16 @@ export class ProductsServiceStack extends cdk.Stack {
         initialPolicy: [
           new PolicyStatement({
             effect: Effect.ALLOW,
-            actions: ["dynamodb:GetItem", "dynamodb:Query"],
-            resources: [process.env.DYNAMO_DB_TABLE_ARN as string],
+            actions: ["dynamodb:Query"],
+            resources: [
+              `${process.env.DYNAMO_DB_ARN}/${PRODUCTS_TABLE_NAME}`,
+              `${process.env.DYNAMO_DB_ARN}/${STOCKS_TABLE_NAME}`,
+            ],
           }),
         ],
         environment: {
-          TABLE_NAME: "AT_Products",
+          PRODUCTS_TABLE_NAME,
+          STOCKS_TABLE_NAME,
           REGION: process.env.REGION as string,
         },
         bundling: {
@@ -83,11 +110,15 @@ export class ProductsServiceStack extends cdk.Stack {
           new PolicyStatement({
             effect: Effect.ALLOW,
             actions: ["dynamodb:PutItem"],
-            resources: [process.env.DYNAMO_DB_TABLE_ARN as string],
+            resources: [
+              `${process.env.DYNAMO_DB_ARN}/${PRODUCTS_TABLE_NAME}`,
+              `${process.env.DYNAMO_DB_ARN}/${STOCKS_TABLE_NAME}`,
+            ],
           }),
         ],
         environment: {
-          TABLE_NAME: "AT_Products",
+          PRODUCTS_TABLE_NAME,
+          STOCKS_TABLE_NAME,
           REGION: process.env.REGION as string,
         },
         bundling: {
