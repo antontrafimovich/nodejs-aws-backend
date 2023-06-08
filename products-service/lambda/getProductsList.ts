@@ -1,11 +1,12 @@
 import {
   DynamoDBClient,
-  ScanCommandOutput,
   ScanCommand,
-  AttributeValue,
+  ScanCommandOutput,
 } from "@aws-sdk/client-dynamodb";
+
 import { Product } from "../model/Product";
-import { Stock } from "../model/Stock";
+import { dbProductItemToResponseItem } from "../utils/product.utils";
+import { dbStockItemToResponseItem } from "../utils/stock.utils";
 
 const ddb = new DynamoDBClient({ region: process.env.REGION });
 
@@ -28,36 +29,7 @@ const createServerErrorResponse = (error: Error) => {
   return {
     statusCode: 500,
     headers: { "Content-Type": "application/json" },
-    body: error,
-  };
-};
-
-const getAttributeValueByKey = (key: string): "S" | "N" => {
-  if (key === "count" || key === "price") {
-    return "N";
-  }
-
-  return "S";
-};
-
-const dbProductItemToResponseItem = (
-  dbItem: Record<string, AttributeValue>
-): Product => {
-  return Object.keys(dbItem).reduce((result, next) => {
-    return { ...result, [next]: dbItem[next][getAttributeValueByKey(next)] };
-  }, {}) as Product;
-};
-
-const dbStockItemToResponseItem = (
-  dbItem: Record<string, AttributeValue> | undefined
-): Stock | null => {
-  if (!dbItem) {
-    return null;
-  }
-
-  return {
-    productId: dbItem["product_id"]["S"] as string,
-    count: Number(dbItem["count"]["N"]),
+    body: error.message,
   };
 };
 
@@ -78,26 +50,30 @@ export const handler = async (event: any) => {
     return createServerErrorResponse(err as Error);
   }
 
-  if ((products?.Count ?? 0) === 0) {
+  if (!products.Items || products.Items.length === 0) {
     return createNotFoundResponse("products");
   }
 
-  if ((stocks?.Count ?? 0) === 0) {
+  if (!stocks.Items || stocks.Items.length === 0) {
     return createNotFoundResponse("stocks");
   }
 
-  const result = products.Items?.map((item) => {
-    const productItem = dbProductItemToResponseItem(item);
+  const resultStocks = stocks.Items.map(dbStockItemToResponseItem);
 
-    const stock = stocks.Items?.map(dbStockItemToResponseItem).find(
-      (stockItem) => stockItem?.productId === productItem.id
-    );
+  const result = products.Items.filter((item) => item !== undefined).map(
+    (item) => {
+      const productItem = dbProductItemToResponseItem(item) as Product;
 
-    return {
-      ...productItem,
-      count: stock?.count,
-    };
-  });
+      const stock = resultStocks.find(
+        (stockItem) => stockItem?.productId === productItem.id
+      );
+
+      return {
+        ...productItem,
+        count: stock?.count,
+      };
+    }
+  );
 
   return {
     statusCode: 200,
