@@ -7,6 +7,8 @@
       "cdk*.json",
       "**/*.d.ts",
       "**/*.js",
+      "static/*",
+      "model/*",
       "tsconfig.json",
       "package*.json",
       "yarn.lock",
