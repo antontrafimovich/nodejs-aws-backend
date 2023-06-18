@@ -18,19 +18,31 @@ export class ImportServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const importCSVLambda = new NodejsFunction(this, "importCSVHandler", {
-      runtime: lambda.Runtime.NODEJS_18_X,
-      entry: path.join(__dirname, "../", "lambda", "importProductsFile.ts"),
-      handler: "handler",
-      bundling: {
-        externalModules: ["@aws-sdk/client-dynamodb"],
-      },
-    });
+    const bucket = new Bucket(this, "ImportServiceBucket");
 
-    const bucket = new Bucket(this, "ImportCSVBucket");
-    bucket.grantWrite(importCSVLambda);
+    const importProductsFileLambda = new NodejsFunction(
+      this,
+      "importProductsFileHandler",
+      {
+        runtime: lambda.Runtime.NODEJS_18_X,
+        entry: path.join(__dirname, "../", "lambda", "importProductsFile.ts"),
+        handler: "handler",
+        bundling: {
+          externalModules: [
+            "@aws-sdk/client-s3",
+            "@aws-sdk/s3-request-presigner",
+          ],
+        },
+        environment: {
+          REGION: process.env.AWS_REGION as string,
+          BUCKET_NAME: bucket.bucketName,
+        },
+      }
+    );
 
-    const http = new apigateway.HttpApi(this, "ProductsServiceHTTP", {
+    bucket.grantWrite(importProductsFileLambda);
+
+    const http = new apigateway.HttpApi(this, "ImportServiceHTTP", {
       corsPreflight: {
         allowOrigins: ["*"],
         allowMethods: [apigateway.CorsHttpMethod.ANY],
@@ -39,11 +51,12 @@ export class ImportServiceStack extends cdk.Stack {
 
     const importCSVIntegration = new HttpLambdaIntegration(
       "importCSVIntegration",
-      importCSVLambda,
+      importProductsFileLambda,
       {
-        parameterMapping: ParameterMapping.fromObject({
-          name: MappingValue.requestQueryString("name"),
-        }),
+        parameterMapping: new ParameterMapping().appendQueryString(
+          "name",
+          MappingValue.requestQueryString("name")
+        ),
       }
     );
 
@@ -52,12 +65,5 @@ export class ImportServiceStack extends cdk.Stack {
       integration: importCSVIntegration,
       methods: [apigateway.HttpMethod.POST],
     });
-
-    // The code that defines your stack goes here
-
-    // example resource
-    // const queue = new sqs.Queue(this, 'ImportServiceQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
   }
 }
