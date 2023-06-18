@@ -4,7 +4,7 @@ import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import * as apigateway from "@aws-cdk/aws-apigatewayv2-alpha";
 
 import { HttpLambdaIntegration } from "@aws-cdk/aws-apigatewayv2-integrations-alpha";
-import { Bucket } from "aws-cdk-lib/aws-s3";
+import { Bucket, HttpMethods } from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
 import path = require("path");
 import {
@@ -18,7 +18,15 @@ export class ImportServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const bucket = new Bucket(this, "ImportServiceBucket");
+    const bucket = new Bucket(this, "ImportServiceBucket", {
+      cors: [
+        {
+          allowedOrigins: ["*"],
+          allowedMethods: [HttpMethods.PUT],
+          allowedHeaders: ["*"],
+        },
+      ],
+    });
 
     const importProductsFileLambda = new NodejsFunction(
       this,
@@ -51,19 +59,13 @@ export class ImportServiceStack extends cdk.Stack {
 
     const importCSVIntegration = new HttpLambdaIntegration(
       "importCSVIntegration",
-      importProductsFileLambda,
-      {
-        parameterMapping: new ParameterMapping().appendQueryString(
-          "name",
-          MappingValue.requestQueryString("name")
-        ),
-      }
+      importProductsFileLambda
     );
 
     http.addRoutes({
       path: "/import",
       integration: importCSVIntegration,
-      methods: [apigateway.HttpMethod.POST],
+      methods: [apigateway.HttpMethod.GET],
     });
   }
 }
