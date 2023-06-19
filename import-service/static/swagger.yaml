@@ -1,0 +1,62 @@
+openapi: "3.0.1"
+info:
+  title: "ImportServiceHTTP"
+  version: "2023-06-18 18:24:28UTC"
+servers:
+  - url: "https://zpyu7ybhs2.execute-api.eu-north-1.amazonaws.com/{basePath}"
+    variables:
+      basePath:
+        default: ""
+tags:
+  - name: "aws:cloudformation:stack-id"
+    x-amazon-apigateway-tag-value: "arn:aws:cloudformation:eu-north-1:144272146271:stack/ImportServiceStack/cb739170-0d44-11ee-bd28-0654a458e35c"
+  - name: "aws:cloudformation:stack-name"
+    x-amazon-apigateway-tag-value: "ImportServiceStack"
+  - name: "aws:cloudformation:logical-id"
+    x-amazon-apigateway-tag-value: "ImportServiceHTTPAA157733"
+paths:
+  /import:
+    get:
+      parameters:
+        - in: query
+          name: name
+          schema:
+            type: string
+          required: true
+          description: Name of the file to import products from
+      responses:
+        200:
+          description: "A signed url"
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: test_url
+        400:
+          description: "Error which indicates, that name parameter hasn't been fullfilled"
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Filename hasn't been provided
+        500:
+          description: "Internal server error"
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: bucket env var hasn't been provided
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: "2.0"
+        type: "aws_proxy"
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:eu-north-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-north-1:144272146271:function:ImportServiceStack-importProductsFileHandler7E1173-1RofC1SOHnsG/invocations"
+        connectionType: "INTERNET"
+x-amazon-apigateway-cors:
+  allowMethods:
+    - "*"
+  maxAge: -42
+  allowCredentials: false
+  allowOrigins:
+    - "*"
+x-amazon-apigateway-importexport-version: "1.0"
