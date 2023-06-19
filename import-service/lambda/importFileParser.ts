@@ -53,8 +53,6 @@ const moveObject = async (
 };
 
 export const handler = async (event: any) => {
-  console.log(JSON.stringify(event));
-
   const [params] = event.Records;
 
   try {
