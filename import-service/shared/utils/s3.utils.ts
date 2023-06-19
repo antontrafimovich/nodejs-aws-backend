@@ -22,7 +22,7 @@ class S3ReadStream extends Stream.Transform {
 
   constructor(params: S3ReadStreamParams) {
     super();
-    params = params;
+    this.params = params;
   }
 
   async init() {
@@ -98,7 +98,7 @@ class S3ReadStream extends Stream.Transform {
     });
   }
 
-  transform(chunk: any, _: BufferEncoding, callback: TransformCallback) {
+  _transform(chunk: any, _: BufferEncoding, callback: TransformCallback) {
     callback(null, chunk);
   }
 }
