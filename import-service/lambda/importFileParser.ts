@@ -1,4 +1,8 @@
-import { S3Client } from "@aws-sdk/client-s3";
+import {
+  CopyObjectCommand,
+  DeleteObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import csv from "csv-parser";
 import { Transform, Writable } from "stream";
 import { pipeline } from "stream/promises";
@@ -6,6 +10,47 @@ import { pipeline } from "stream/promises";
 import { createS3ReadStream } from "../shared";
 
 const client = new S3Client({ region: process.env.REGION });
+
+const copyObject = (
+  bucket: string,
+  sourceKey: string,
+  destinationKey: string
+) => {
+  const copyCommand = new CopyObjectCommand({
+    Bucket: bucket,
+    CopySource: `${bucket}/${sourceKey}`,
+    Key: destinationKey,
+  });
+
+  return client.send(copyCommand);
+};
+
+const deleteObject = (bucket: string, key: string) => {
+  const copyCommand = new DeleteObjectCommand({
+    Bucket: bucket,
+    Key: key,
+  });
+
+  return client.send(copyCommand);
+};
+
+const moveObject = async (
+  bucket: string,
+  sourceKey: string,
+  destinationKey: string
+) => {
+  try {
+    await copyObject(bucket, sourceKey, destinationKey);
+  } catch (err) {
+    throw err;
+  }
+
+  try {
+    await deleteObject(bucket, sourceKey);
+  } catch (err) {
+    throw err;
+  }
+};
 
 export const handler = async (event: any) => {
   console.log(JSON.stringify(event));
@@ -34,7 +79,25 @@ export const handler = async (event: any) => {
     return {
       statusCode: 500,
       headers: { "Content-Type": "text/plain" },
-      body: `Some problem with a stream: ${(err as Error).message}`,
+      body: `Error with csv parsing: ${(err as Error).message}`,
+    };
+  }
+
+  const [, objectKey] = params.s3.object.key.split("/");
+
+  try {
+    await moveObject(
+      params.s3.bucket.name,
+      params.s3.object.key,
+      `parsed/${objectKey}`
+    );
+  } catch (err) {
+    return {
+      statusCode: 500,
+      headers: { "Content-Type": "text/plain" },
+      body: `Error with moving object to parse fodler: ${
+        (err as Error).message
+      }`,
     };
   }
 
