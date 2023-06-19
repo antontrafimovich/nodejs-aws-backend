@@ -1,0 +1,130 @@
+{
+  "AT_Stocks": [
+    {
+      "PutRequest": {
+        "Item": {
+          "product_id": {
+            "S": "647cfe58c1a3d1e43204df53"
+          },
+          "count": {
+            "N": "4"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "product_id": {
+            "S": "647cfe582541d3a2ac42c78f"
+          },
+          "count": {
+            "N": "6"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "product_id": {
+            "S": "647cfe5858ec26628bfcba66"
+          },
+          "count": {
+            "N": "8"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "product_id": {
+            "S": "647cfe589b674a1a08fea0f1"
+          },
+          "count": {
+            "N": "2"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "product_id": {
+            "S": "647cfe584228683415b2f06b"
+          },
+          "title": {
+            "S": "cupproduct_idatat"
+          },
+          "count": {
+            "N": "11"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "product_id": {
+            "S": "647cfe58625c642b61b5414f"
+          },
+          "title": {
+            "S": "exercitation"
+          },
+          "count": {
+            "N": "19"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "product_id": {
+            "S": "647cfe582d5b34aaa5722eae"
+          },
+          "count": {
+            "N": "21"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "product_id": {
+            "S": "647cfe587e70ea1e6f630436"
+          },
+          "count": {
+            "N": "4"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "product_id": {
+            "S": "647cfe5827530d448dfafadf"
+          },
+          "count": {
+            "N": "12"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "product_id": {
+            "S": "647cfe58a9ad29427c5d8638"
+          },
+          "count": {
+            "N": "5"
+          }
+        }
+      }
+    }
+  ]
+}
