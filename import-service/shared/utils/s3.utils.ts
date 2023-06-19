@@ -81,7 +81,7 @@ class S3ReadStream extends Stream.Transform {
     const data = res.Body;
 
     if (!(data instanceof Stream.Readable)) {
-      this.destroy(new Error(`unsupported data representation: ${data}`));
+      this.destroy(new Error(`Data must be of a Readable stream type`));
       return;
     }
 
