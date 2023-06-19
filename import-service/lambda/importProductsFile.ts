@@ -1,9 +1,6 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-const REGION = process.env.REGION;
-const BUCKET_NAME = process.env.BUCKET_NAME;
-
 const createSignedS3Url = (
   region: string,
   bucket: string,
@@ -43,18 +40,18 @@ export const handler = async (event: any) => {
 
   let signedUrl: string;
 
-  if (REGION === undefined) {
+  if (process.env.REGION === undefined) {
     return createNoEnvVarProvidedResponse("region");
   }
 
-  if (BUCKET_NAME === undefined) {
+  if (process.env.BUCKET_NAME === undefined) {
     return createNoEnvVarProvidedResponse("bucket");
   }
 
   try {
     signedUrl = await createSignedS3Url(
-      REGION,
-      BUCKET_NAME,
+      process.env.REGION,
+      process.env.BUCKET_NAME,
       `uploaded/${name}`
     );
   } catch (err: unknown) {
