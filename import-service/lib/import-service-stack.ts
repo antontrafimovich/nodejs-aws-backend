@@ -6,9 +6,7 @@ import { S3EventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Bucket, EventType, HttpMethods } from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
-import path = require("path");
-
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
+import path from "path";
 
 export class ImportServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -81,7 +79,8 @@ export class ImportServiceStack extends cdk.Stack {
       }
     );
 
-    bucket.grantRead(importFileParserLambda);
+    bucket.grantReadWrite(importFileParserLambda);
+    bucket.grantDelete(importFileParserLambda);
 
     importFileParserLambda.addEventSource(
       new S3EventSource(bucket, {
