@@ -72,10 +72,7 @@ export class ImportServiceStack extends cdk.Stack {
         entry: path.join(__dirname, "../", "lambda", "importFileParser.ts"),
         handler: "handler",
         bundling: {
-          externalModules: [
-            "@aws-sdk/client-s3",
-            "@aws-sdk/s3-request-presigner",
-          ],
+          externalModules: ["@aws-sdk/client-s3"],
         },
         environment: {
           REGION: process.env.AWS_REGION as string,
