@@ -8,6 +8,8 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Construct } from "constructs";
 import * as path from "node:path";
+import * as sqs from "aws-cdk-lib/aws-sqs";
+import * as lambdaEventSources from "aws-cdk-lib/aws-lambda-event-sources";
 
 const PRODUCTS_TABLE_NAME = "AT_Products";
 const STOCKS_TABLE_NAME = "AT_Stocks";
@@ -135,5 +137,24 @@ export class ProductsServiceStack extends cdk.Stack {
       integration: createProductIntegration,
       methods: [apigateway.HttpMethod.POST],
     });
+
+    const catalogBatchProcessLambda = new NodejsFunction(
+      this,
+      "catalogBatchProcessHandler",
+      {
+        runtime: lambda.Runtime.NODEJS_18_X,
+        entry: path.join(__dirname, "../", "lambda", "catalogBatchProcess.ts"),
+        handler: "handler",
+      }
+    );
+
+    const catalogItemsQueue = new sqs.Queue(this, "catalogItemsQueue");
+    catalogItemsQueue.grantConsumeMessages(catalogBatchProcessLambda);
+
+    const catalogItemsQueueEventSource = new lambdaEventSources.SqsEventSource(
+      catalogItemsQueue,
+      { batchSize: 5 }
+    );
+    catalogBatchProcessLambda.addEventSource(catalogItemsQueueEventSource);
   }
 }
