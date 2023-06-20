@@ -16,8 +16,6 @@ export class ProductsServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    console.log(`${process.env.DYNAMO_DB_ARN}/${STOCKS_TABLE_NAME}`);
-
     const getProductsLambda = new NodejsFunction(this, "getProductsHandler", {
       runtime: lambda.Runtime.NODEJS_18_X,
       entry: path.join(__dirname, "../", "lambda", "getProductsList.ts"),

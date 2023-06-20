@@ -1,10 +1,7 @@
-import {
-  DynamoDBClient,
-  QueryCommand,
-  QueryCommandOutput,
-} from "@aws-sdk/client-dynamodb";
-import { dbProductItemToResponseItem } from "../utils/product.utils";
-import { dbStockItemToResponseItem } from "../utils/stock.utils";
+import { DynamoDBClient, QueryCommand, QueryCommandOutput } from '@aws-sdk/client-dynamodb';
+
+import { dbProductItemToResponseItem } from '../utils/product.utils';
+import { dbStockItemToResponseItem } from '../utils/stock.utils';
 
 const ddb = new DynamoDBClient({ region: process.env.REGION });
 
@@ -29,6 +26,8 @@ const queryStock = (id: string) => {
 
 export const handler = async (event: any) => {
   const { productId } = event.pathParameters;
+
+  console.log(`GET /products/${productId} pathParameter: id=${productId}`);
 
   let product: QueryCommandOutput;
 

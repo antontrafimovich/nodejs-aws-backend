@@ -1,16 +1,19 @@
-import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
-import { uid } from "uid";
+import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb';
+import { uid } from 'uid';
 
-import { Product } from "../model/Product";
+import { Product } from '../model/Product';
+import { Stock } from '../model/Stock';
 
 const ddb = new DynamoDBClient({ region: process.env.REGION });
 
-const put = (item: Omit<Product, "id">) => {
+type CreateProductRequestItem = Product & { count: number };
+
+const putIntoProducts = (item: Product) => {
   const putCommand = new PutItemCommand({
     TableName: process.env.PRODUCTS_TABLE_NAME as string,
     Item: {
       id: {
-        S: uid(5),
+        S: item.id,
       },
       title: {
         S: item.title,
@@ -20,6 +23,23 @@ const put = (item: Omit<Product, "id">) => {
       },
       price: {
         N: item.price.toString(),
+      },
+    },
+    ReturnValues: "ALL_OLD",
+  });
+
+  return ddb.send(putCommand);
+};
+
+const putIntoStocks = (item: Stock) => {
+  const putCommand = new PutItemCommand({
+    TableName: process.env.STOCKS_TABLE_NAME as string,
+    Item: {
+      product_id: {
+        S: item.productId,
+      },
+      count: {
+        N: item.count.toString(),
       },
     },
   });
@@ -36,7 +56,7 @@ const validateInputProduct = (item: Record<string, any>): void => {
 export const handler = async (event: any) => {
   console.log(`POST /products ${event.body}`);
 
-  let item;
+  let item: CreateProductRequestItem;
 
   try {
     item = JSON.parse(event.body);
@@ -54,29 +74,40 @@ export const handler = async (event: any) => {
     return {
       statusCode: 400,
       headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify((err as Error).message),
+      body: (err as Error).message,
     };
   }
 
-  let putResult;
+  const newProduct: Product = {
+    title: item.title,
+    description: item.description ?? "",
+    price: item.price ?? 0,
+    id: uid(5),
+  };
 
   try {
-    putResult = await put({
-      title: item.title,
-      description: item.description,
-      price: item.price,
-    });
+    await putIntoProducts(newProduct);
   } catch (err: any) {
     return {
       statusCode: 500,
       headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify(err.$metadata.message),
+      body: err.message,
+    };
+  }
+
+  try {
+    await putIntoStocks({ productId: newProduct.id, count: item.count ?? 0 });
+  } catch (err: any) {
+    return {
+      statusCode: 500,
+      headers: { "Content-Type": "text/plain" },
+      body: err.message,
     };
   }
 
   return {
     statusCode: 200,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(item),
+    body: JSON.stringify(newProduct),
   };
 };
