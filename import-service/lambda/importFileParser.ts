@@ -3,13 +3,25 @@ import {
   DeleteObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
+import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import csv from "csv-parser";
-import { Transform, Writable } from "stream";
+import { PassThrough } from "stream";
 import { pipeline } from "stream/promises";
 
 import { createS3ReadStream } from "../shared";
+import { Product } from "./../../shared";
 
 const client = new S3Client({ region: process.env.REGION });
+const sqs = new SQSClient({ region: process.env.REGION });
+
+const sendMessageToSQS = (product: Product[]) => {
+  const command = new SendMessageCommand({
+    QueueUrl: process.env.QUEUE_URL as string,
+    MessageBody: JSON.stringify(product),
+  });
+
+  return sqs.send(command);
+};
 
 const copyObject = (
   bucket: string,
@@ -58,17 +70,18 @@ export const handler = async (event: any) => {
   try {
     await pipeline(
       createS3ReadStream(client, params.s3.bucket.name, params.s3.object.key),
-      new Transform({
-        transform: (chunk, _, callback) => {
-          console.log(chunk.toString("utf8"));
+      csv(),
+      new PassThrough({
+        transform(chunk, _, callback) {
+          console.log(chunk);
           callback(null, chunk);
         },
+        objectMode: true,
       }),
-      csv(),
-      new Writable({
-        write(chunk, _, callback) {
-          console.log(chunk);
-          callback(null);
+      new PassThrough({
+        transform(chunk, _, callback) {
+          sendMessageToSQS(chunk);
+          callback(null, chunk);
         },
         objectMode: true,
       })
