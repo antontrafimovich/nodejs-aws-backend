@@ -3,44 +3,54 @@ import "dotenv/config";
 import * as apigateway from "@aws-cdk/aws-apigatewayv2-alpha";
 import { HttpLambdaIntegration } from "@aws-cdk/aws-apigatewayv2-integrations-alpha";
 import * as cdk from "aws-cdk-lib";
-import { Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
+import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as lambda from "aws-cdk-lib/aws-lambda";
+import * as lambdaEventSources from "aws-cdk-lib/aws-lambda-event-sources";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
+import * as sqs from "aws-cdk-lib/aws-sqs";
 import { Construct } from "constructs";
 import * as path from "node:path";
-import * as sqs from "aws-cdk-lib/aws-sqs";
-import * as lambdaEventSources from "aws-cdk-lib/aws-lambda-event-sources";
-
-const PRODUCTS_TABLE_NAME = "AT_Products";
-const STOCKS_TABLE_NAME = "AT_Stocks";
 
 export class ProductsServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    const dynamoDbProductsTable = dynamodb.Table.fromTableArn(
+      this,
+      "productsTable",
+      `${process.env.PRODUCTS_DYNAMO_DB_ARN}`
+    );
+
+    const dynamoDbStocksTable = dynamodb.Table.fromTableArn(
+      this,
+      "stocksTable",
+      `${process.env.STOCKS_DYNAMO_DB_ARN}`
+    );
+
+    const [, productsTableName] = (
+      process.env.PRODUCTS_DYNAMO_DB_ARN ?? ""
+    ).split("/");
+
+    const [, stocksTableName] = (process.env.STOCKS_DYNAMO_DB_ARN ?? "").split(
+      "/"
+    );
 
     const getProductsLambda = new NodejsFunction(this, "getProductsHandler", {
       runtime: lambda.Runtime.NODEJS_18_X,
       entry: path.join(__dirname, "../", "lambda", "getProductsList.ts"),
       handler: "handler",
       environment: {
-        PRODUCTS_TABLE_NAME,
-        STOCKS_TABLE_NAME,
+        PRODUCTS_TABLE_NAME: productsTableName,
+        STOCKS_TABLE_NAME: stocksTableName,
         REGION: process.env.REGION as string,
       },
-      initialPolicy: [
-        new PolicyStatement({
-          effect: Effect.ALLOW,
-          actions: ["dynamodb:Scan"],
-          resources: [
-            `${process.env.DYNAMO_DB_ARN}/${PRODUCTS_TABLE_NAME}`,
-            `${process.env.DYNAMO_DB_ARN}/${STOCKS_TABLE_NAME}`,
-          ],
-        }),
-      ],
       bundling: {
         externalModules: ["@aws-sdk/client-dynamodb"],
       },
     });
+
+    dynamoDbProductsTable.grantReadData(getProductsLambda);
+    dynamoDbStocksTable.grantReadData(getProductsLambda);
 
     const getProductsIntegration = new HttpLambdaIntegration(
       "getProductsIntegration",
@@ -67,19 +77,10 @@ export class ProductsServiceStack extends cdk.Stack {
         runtime: lambda.Runtime.NODEJS_18_X,
         entry: path.join(__dirname, "../", "lambda", "getProductsById.ts"),
         handler: "handler",
-        initialPolicy: [
-          new PolicyStatement({
-            effect: Effect.ALLOW,
-            actions: ["dynamodb:Query"],
-            resources: [
-              `${process.env.DYNAMO_DB_ARN}/${PRODUCTS_TABLE_NAME}`,
-              `${process.env.DYNAMO_DB_ARN}/${STOCKS_TABLE_NAME}`,
-            ],
-          }),
-        ],
+
         environment: {
-          PRODUCTS_TABLE_NAME,
-          STOCKS_TABLE_NAME,
+          PRODUCTS_TABLE_NAME: productsTableName,
+          STOCKS_TABLE_NAME: stocksTableName,
           REGION: process.env.REGION as string,
         },
         bundling: {
@@ -87,6 +88,9 @@ export class ProductsServiceStack extends cdk.Stack {
         },
       }
     );
+
+    dynamoDbProductsTable.grantReadData(getProductsByIdLambda);
+    dynamoDbStocksTable.grantReadData(getProductsByIdLambda);
 
     const getProductsByIdIntegration = new HttpLambdaIntegration(
       "getProductsByIdIntegration",
@@ -106,19 +110,9 @@ export class ProductsServiceStack extends cdk.Stack {
         runtime: lambda.Runtime.NODEJS_18_X,
         entry: path.join(__dirname, "../", "lambda", "createProduct.ts"),
         handler: "handler",
-        initialPolicy: [
-          new PolicyStatement({
-            effect: Effect.ALLOW,
-            actions: ["dynamodb:PutItem"],
-            resources: [
-              `${process.env.DYNAMO_DB_ARN}/${PRODUCTS_TABLE_NAME}`,
-              `${process.env.DYNAMO_DB_ARN}/${STOCKS_TABLE_NAME}`,
-            ],
-          }),
-        ],
         environment: {
-          PRODUCTS_TABLE_NAME,
-          STOCKS_TABLE_NAME,
+          PRODUCTS_TABLE_NAME: productsTableName,
+          STOCKS_TABLE_NAME: stocksTableName,
           REGION: process.env.REGION as string,
         },
         bundling: {
@@ -126,6 +120,9 @@ export class ProductsServiceStack extends cdk.Stack {
         },
       }
     );
+
+    dynamoDbProductsTable.grantWriteData(createProductLambda);
+    dynamoDbStocksTable.grantWriteData(createProductLambda);
 
     const createProductIntegration = new HttpLambdaIntegration(
       "createProductIntegration",
