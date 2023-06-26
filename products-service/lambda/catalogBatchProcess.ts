@@ -1,13 +1,21 @@
+import { uid } from "uid";
 import { productsRepo, stocksRepo } from "../app";
 
 export const handler = async (event: any) => {
   try {
-    const promises = event.Records.map(async (record: any) => {
+    const promises = event.Records.map((record: any) => {
       const product = JSON.parse(record.body);
 
+      const id = uid(5);
+
       return Promise.all([
-        productsRepo.put(product),
-        stocksRepo.put({ productId: product.id, count: product.count }),
+        productsRepo.put({
+          id,
+          title: product.title,
+          price: parseFloat(product.price),
+          description: product.description,
+        }),
+        stocksRepo.put({ productId: id, count: parseInt(product.count) }),
       ]);
     });
 
@@ -18,12 +26,6 @@ export const handler = async (event: any) => {
       headers: { "Content-Type": "text/plain" },
       body: err instanceof Error ? err.message : err,
     };
-  }
-
-  for (const record of event.Records) {
-    const product = JSON.parse(record.body);
-    productsRepo.put(product);
-    stocksRepo.put({ productId: product.id, count: product.count });
   }
 
   return {

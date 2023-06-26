@@ -142,8 +142,22 @@ export class ProductsServiceStack extends cdk.Stack {
         runtime: lambda.Runtime.NODEJS_18_X,
         entry: path.join(__dirname, "../", "lambda", "catalogBatchProcess.ts"),
         handler: "handler",
+        environment: {
+          PRODUCTS_TABLE_NAME: productsTableName,
+          STOCKS_TABLE_NAME: stocksTableName,
+          REGION: process.env.REGION as string,
+        },
+        bundling: {
+          externalModules: [
+            "@aws-sdk/client-dynamodb",
+            "@aws-sdk/util-dynamodb",
+          ],
+        },
       }
     );
+
+    dynamoDbProductsTable.grantWriteData(catalogBatchProcessLambda);
+    dynamoDbStocksTable.grantWriteData(catalogBatchProcessLambda);
 
     const catalogItemsQueue = new sqs.Queue(this, "catalogItemsQueue");
     catalogItemsQueue.grantConsumeMessages(catalogBatchProcessLambda);

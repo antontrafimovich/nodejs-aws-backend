@@ -7,9 +7,18 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 
 import { DB } from "../model/DB";
 
-const ddb = new DynamoDBClient({ region: process.env.REGION });
+export type DynamoDBOptions = {
+  region: string;
+};
 
 export class DynamoDB extends DB {
+  private client: DynamoDBClient;
+
+  constructor({ region }: DynamoDBOptions) {
+    super();
+    this.client = new DynamoDBClient({ region });
+  }
+
   async put<T>(tableName: string, item: T): Promise<T> {
     const putCommand = new PutItemCommand({
       TableName: tableName,
@@ -17,7 +26,7 @@ export class DynamoDB extends DB {
       ReturnValues: "ALL_OLD",
     });
 
-    await ddb.send(putCommand);
+    await this.client.send(putCommand);
 
     return item;
   }
@@ -33,7 +42,7 @@ export class DynamoDB extends DB {
       },
     });
 
-    await ddb.send(batchCommand);
+    await this.client.send(batchCommand);
 
     return items;
   }

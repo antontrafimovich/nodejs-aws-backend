@@ -1,7 +1,9 @@
 import { DynamoDB } from "../db";
 import { ProductsRepo, StocksRepo } from "../repo";
 
-const db = new DynamoDB();
+const db = new DynamoDB({
+  region: process.env.AWS_REGION as string,
+});
 
 export const productsRepo = new ProductsRepo(
   db,
