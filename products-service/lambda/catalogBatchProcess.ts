@@ -1,5 +1,9 @@
+import { PublishCommand, SNSClient } from "@aws-sdk/client-sns";
 import { uid } from "uid";
+
 import { productsRepo, stocksRepo } from "../app";
+
+const client = new SNSClient({ region: process.env.REGION });
 
 export const handler = async (event: any) => {
   try {
@@ -21,6 +25,22 @@ export const handler = async (event: any) => {
 
     await Promise.all(promises);
   } catch (err: any) {
+    return {
+      statusCode: 500,
+      headers: { "Content-Type": "text/plain" },
+      body: err instanceof Error ? err.message : err,
+    };
+  }
+
+  const command = new PublishCommand({
+    TargetArn: process.env.SNS_ARN,
+    Message: "New products were added",
+    Subject: "Notification from products service",
+  });
+
+  try {
+    await client.send(command);
+  } catch (err) {
     return {
       statusCode: 500,
       headers: { "Content-Type": "text/plain" },

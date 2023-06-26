@@ -8,12 +8,19 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as lambdaEventSources from "aws-cdk-lib/aws-lambda-event-sources";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import * as sqs from "aws-cdk-lib/aws-sqs";
+import * as sns from "aws-cdk-lib/aws-sns";
+import * as subscriptions from "aws-cdk-lib/aws-sns-subscriptions";
 import { Construct } from "constructs";
 import * as path from "node:path";
 
 export class ProductsServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    const topic = new sns.Topic(this, "createProductTopic");
+    topic.addSubscription(
+      new subscriptions.EmailSubscription(process.env.EMAIL_TO_NOTIFY as string)
+    );
 
     const dynamoDbProductsTable = dynamodb.Table.fromTableArn(
       this,
@@ -146,15 +153,19 @@ export class ProductsServiceStack extends cdk.Stack {
           PRODUCTS_TABLE_NAME: productsTableName,
           STOCKS_TABLE_NAME: stocksTableName,
           REGION: process.env.REGION as string,
+          SNS_ARN: topic.topicArn,
         },
         bundling: {
           externalModules: [
             "@aws-sdk/client-dynamodb",
             "@aws-sdk/util-dynamodb",
+            "@aws-sdk/client-sns"
           ],
         },
       }
     );
+
+    topic.grantPublish(catalogBatchProcessLambda);
 
     dynamoDbProductsTable.grantWriteData(catalogBatchProcessLambda);
     dynamoDbStocksTable.grantWriteData(catalogBatchProcessLambda);
