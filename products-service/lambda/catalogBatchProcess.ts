@@ -7,12 +7,12 @@ const client = new SNSClient({ region: process.env.REGION });
 
 export const handler = async (event: any) => {
   try {
-    const promises = event.Records.map((record: any) => {
+    const promises = event.Records.map(async (record: any) => {
       const product = JSON.parse(record.body);
 
       const id = uid(5);
 
-      return Promise.all([
+      await Promise.all([
         productsRepo.put({
           id,
           title: product.title,
@@ -21,26 +21,27 @@ export const handler = async (event: any) => {
         }),
         stocksRepo.put({ productId: id, count: parseInt(product.count) }),
       ]);
+
+      const command = new PublishCommand({
+        TargetArn: process.env.SNS_ARN,
+        Message: `New product was added: \n ${JSON.stringify({
+          ...product,
+          count: parseInt(product.count),
+        })})}`,
+        Subject: "Notification from products service",
+        MessageAttributes: {
+          count: {
+            DataType: "Number",
+            StringValue: product.count,
+          },
+        },
+      });
+
+      await client.send(command);
     });
 
     await Promise.all(promises);
   } catch (err: any) {
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "text/plain" },
-      body: err instanceof Error ? err.message : err,
-    };
-  }
-
-  const command = new PublishCommand({
-    TargetArn: process.env.SNS_ARN,
-    Message: "New products were added",
-    Subject: "Notification from products service",
-  });
-
-  try {
-    await client.send(command);
-  } catch (err) {
     return {
       statusCode: 500,
       headers: { "Content-Type": "text/plain" },
