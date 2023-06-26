@@ -21,6 +21,16 @@ export class ProductsServiceStack extends cdk.Stack {
     topic.addSubscription(
       new subscriptions.EmailSubscription(process.env.EMAIL_TO_NOTIFY as string)
     );
+    topic.addSubscription(
+      new subscriptions.EmailSubscription(
+        process.env.EMAIL_TO_NOTIFY_WITH_LARGE_STOCK as string,
+        {
+          filterPolicy: {
+            count: sns.SubscriptionFilter.numericFilter({ greaterThan: 600 }),
+          },
+        }
+      )
+    );
 
     const dynamoDbProductsTable = dynamodb.Table.fromTableArn(
       this,
@@ -159,7 +169,7 @@ export class ProductsServiceStack extends cdk.Stack {
           externalModules: [
             "@aws-sdk/client-dynamodb",
             "@aws-sdk/util-dynamodb",
-            "@aws-sdk/client-sns"
+            "@aws-sdk/client-sns",
           ],
         },
       }
