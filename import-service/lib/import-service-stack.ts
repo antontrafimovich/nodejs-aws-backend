@@ -59,6 +59,7 @@ export class ImportServiceStack extends cdk.Stack {
       corsPreflight: {
         allowOrigins: ["*"],
         allowMethods: [apigateway.CorsHttpMethod.ANY],
+        allowHeaders: ["*"],
       },
     });
 
