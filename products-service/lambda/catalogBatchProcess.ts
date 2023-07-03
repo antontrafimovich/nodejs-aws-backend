@@ -24,10 +24,7 @@ export const handler = async (event: any) => {
 
       const command = new PublishCommand({
         TargetArn: process.env.SNS_ARN,
-        Message: `New product was added: \n ${JSON.stringify({
-          ...product,
-          count: parseInt(product.count),
-        })})}`,
+        Message: `New product was added: \n ${JSON.stringify(product)})}`,
         Subject: "Notification from products service",
         MessageAttributes: {
           count: {
