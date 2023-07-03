@@ -2,6 +2,7 @@ import * as apigateway from "@aws-cdk/aws-apigatewayv2-alpha";
 import { HttpLambdaIntegration } from "@aws-cdk/aws-apigatewayv2-integrations-alpha";
 import * as cdk from "aws-cdk-lib";
 import * as lambda from "aws-cdk-lib/aws-lambda";
+import * as sqs from "aws-cdk-lib/aws-sqs";
 import { S3EventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Bucket, EventType, HttpMethods } from "aws-cdk-lib/aws-s3";
@@ -21,6 +22,12 @@ export class ImportServiceStack extends cdk.Stack {
         },
       ],
     });
+
+    const queue = sqs.Queue.fromQueueArn(
+      this,
+      "importServiceCatalogItemsQueue",
+      process.env.QUEUE_ARN as string
+    );
 
     const importProductsFileLambda = new NodejsFunction(
       this,
@@ -70,14 +77,17 @@ export class ImportServiceStack extends cdk.Stack {
         entry: path.join(__dirname, "../", "lambda", "importFileParser.ts"),
         handler: "handler",
         bundling: {
-          externalModules: ["@aws-sdk/client-s3"],
+          externalModules: ["@aws-sdk/client-s3", "@aws-sdk/client-sqs"],
         },
         environment: {
           REGION: process.env.AWS_REGION as string,
           BUCKET_NAME: bucket.bucketName,
+          QUEUE_URL: queue.queueUrl,
         },
       }
     );
+
+    queue.grantSendMessages(importFileParserLambda);
 
     bucket.grantReadWrite(importFileParserLambda);
     bucket.grantDelete(importFileParserLambda);

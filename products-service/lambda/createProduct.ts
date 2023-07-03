@@ -1,51 +1,9 @@
-import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb';
-import { uid } from 'uid';
+import { uid } from "uid";
 
-import { Product } from '../model/Product';
-import { Stock } from '../model/Stock';
-
-const ddb = new DynamoDBClient({ region: process.env.REGION });
+import { productsRepo, stocksRepo } from "../app";
+import { Product } from "../model/Product";
 
 type CreateProductRequestItem = Product & { count: number };
-
-const putIntoProducts = (item: Product) => {
-  const putCommand = new PutItemCommand({
-    TableName: process.env.PRODUCTS_TABLE_NAME as string,
-    Item: {
-      id: {
-        S: item.id,
-      },
-      title: {
-        S: item.title,
-      },
-      description: {
-        S: item.description,
-      },
-      price: {
-        N: item.price.toString(),
-      },
-    },
-    ReturnValues: "ALL_OLD",
-  });
-
-  return ddb.send(putCommand);
-};
-
-const putIntoStocks = (item: Stock) => {
-  const putCommand = new PutItemCommand({
-    TableName: process.env.STOCKS_TABLE_NAME as string,
-    Item: {
-      product_id: {
-        S: item.productId,
-      },
-      count: {
-        N: item.count.toString(),
-      },
-    },
-  });
-
-  return ddb.send(putCommand);
-};
 
 const validateInputProduct = (item: Record<string, any>): void => {
   if (!item.title) {
@@ -86,7 +44,7 @@ export const handler = async (event: any) => {
   };
 
   try {
-    await putIntoProducts(newProduct);
+    await productsRepo.put(newProduct);
   } catch (err: any) {
     return {
       statusCode: 500,
@@ -96,7 +54,7 @@ export const handler = async (event: any) => {
   }
 
   try {
-    await putIntoStocks({ productId: newProduct.id, count: item.count ?? 0 });
+    await stocksRepo.put({ productId: newProduct.id, count: item.count ?? 0 });
   } catch (err: any) {
     return {
       statusCode: 500,
