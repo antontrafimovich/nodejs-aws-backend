@@ -1,4 +1,4 @@
-import { uid } from "uid";
+import { v4 as uuidv4 } from "uuid";
 
 import { productsRepo, stocksRepo } from "../app";
 import { Product } from "../model/Product";
@@ -40,7 +40,7 @@ export const handler = async (event: any) => {
     title: item.title,
     description: item.description ?? "",
     price: item.price ?? 0,
-    id: uid(5),
+    id: uuidv4(),
   };
 
   try {

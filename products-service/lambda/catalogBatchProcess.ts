@@ -1,5 +1,5 @@
 import { PublishCommand, SNSClient } from "@aws-sdk/client-sns";
-import { uid } from "uid";
+import { v4 as uuidv4 } from "uuid";
 
 import { productsRepo, stocksRepo } from "../app";
 
@@ -10,7 +10,7 @@ export const handler = async (event: any) => {
     const promises = event.Records.map(async (record: any) => {
       const product = JSON.parse(record.body);
 
-      const id = uid(5);
+      const id = uuidv4();
 
       await Promise.all([
         productsRepo.put({
