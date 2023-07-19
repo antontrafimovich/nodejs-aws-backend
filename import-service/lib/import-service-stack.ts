@@ -8,6 +8,10 @@ import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Bucket, EventType, HttpMethods } from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
 import path from "path";
+import {
+  HttpLambdaAuthorizer,
+  HttpLambdaResponseType,
+} from "@aws-cdk/aws-apigatewayv2-authorizers-alpha";
 
 export class ImportServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -55,6 +59,7 @@ export class ImportServiceStack extends cdk.Stack {
       corsPreflight: {
         allowOrigins: ["*"],
         allowMethods: [apigateway.CorsHttpMethod.ANY],
+        allowHeaders: ["*"],
       },
     });
 
@@ -63,10 +68,25 @@ export class ImportServiceStack extends cdk.Stack {
       importProductsFileLambda
     );
 
+    const authorizationLambda = lambda.Function.fromFunctionArn(
+      this,
+      "autohorizerLambda",
+      process.env.AUTHORIZER_ARN as string
+    );
+
+    const authorizer = new HttpLambdaAuthorizer(
+      "importCSVFileAuthorizer",
+      authorizationLambda,
+      {
+        responseTypes: [HttpLambdaResponseType.SIMPLE],
+      }
+    );
+
     http.addRoutes({
       path: "/import",
       integration: importCSVIntegration,
       methods: [apigateway.HttpMethod.GET],
+      authorizer,
     });
 
     const importFileParserLambda = new NodejsFunction(
