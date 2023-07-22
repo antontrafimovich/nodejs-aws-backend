@@ -34,7 +34,10 @@ createServer((req, res) => {
     {
       method: req.method,
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': ['PUT', 'GET'].includes(req.method)
+          ? 'application/json'
+          : null,
+        Authorization: req.headers['authorization'] ?? null,
       },
     },
     (response) => {
