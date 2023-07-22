@@ -4,7 +4,11 @@ import 'dotenv/config';
 
 const port = 4000;
 
-const getRequester = (protocol) => {
+const getProtocolFromUrl = (url: string): 'http' | 'https' => {
+  return url?.split(':')[0] as 'http' | 'https';
+};
+
+const getRequester = (protocol: 'http' | 'https') => {
   if (protocol === 'http') {
     return requestHTTP;
   }
@@ -12,14 +16,9 @@ const getRequester = (protocol) => {
   return requestHTTPS;
 };
 
-const isStatic = (url) => {
-  const [, service, path] = url?.split('/');
-};
-
 createServer((req, res) => {
   const url = req.url;
-  console.log(url);
-  const [, service, ...rest] = url?.split('/');
+  const [, service, ...restUrl] = url?.split('/');
   const serviceUrl = process.env[service];
 
   if (!serviceUrl) {
@@ -28,12 +27,16 @@ createServer((req, res) => {
     return;
   }
 
-  const [protocol] = serviceUrl?.split(':');
-
-  console.log(`${serviceUrl}/${rest.join('/')}`);
+  const protocol = getProtocolFromUrl(serviceUrl);
 
   const serviceRequest = getRequester(protocol)(
-    `${serviceUrl}/${rest.join('/')}`,
+    `${serviceUrl}/${restUrl.join('/')}`,
+    {
+      method: req.method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    },
     (response) => {
       res.writeHead(response.statusCode || 502, {
         ...response.headers,
