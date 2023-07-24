@@ -6,9 +6,9 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "tsc index.ts build",
-    "start": "ts-node index.ts",
-    "start:dev": "nest start --watch"
+    "build": "tsc index.ts",
+    "start:dev": "ts-node index.ts",
+    "start": "node index.js"
   },
   "devDependencies": {
     "@types/node": "^20.3.1",
