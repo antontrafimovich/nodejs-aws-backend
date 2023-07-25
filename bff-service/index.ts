@@ -7,8 +7,18 @@ const port = 4000;
 
 const useAuth = (next: RequestListener): RequestListener => {
   return async (req, res) => {
+    if (req.method === 'OPTIONS') {
+      await next(req, res);
+      return;
+    }
+
     if (!req.headers['authorization']) {
-      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.writeHead(401, {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': '*',
+        'Access-Control-Allow-Headers': '*',
+      });
       res.end(
         JSON.stringify({
           statusCode: 401,
@@ -27,7 +37,12 @@ const useAuth = (next: RequestListener): RequestListener => {
     const [login, password] = data.split(':');
 
     if (login !== 'antontrafimovich' || password !== 'TEST_PASSWORD') {
-      res.writeHead(403, { 'Content-Type': 'application/json' });
+      res.writeHead(403, {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': '*',
+        'Access-Control-Allow-Headers': '*',
+      });
       res.end(
         JSON.stringify({
           statusCode: 403,
@@ -68,7 +83,12 @@ const useCache = (next: RequestListener): RequestListener => {
     const serviceUrl = process.env[service];
 
     if (!serviceUrl) {
-      res.writeHead(502, { 'Content-Type': 'text/plain' });
+      res.writeHead(502, {
+        'Content-Type': 'text/plain',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': '*',
+        'Access-Control-Allow-Headers': '*',
+      });
       res.end('Cannot process request');
       return;
     }
@@ -80,6 +100,9 @@ const useCache = (next: RequestListener): RequestListener => {
         headers: {
           'Content-Type': 'application/json',
           Authorization: req.headers['authorization'] ?? null,
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': '*',
+          'Access-Control-Allow-Headers': '*',
         },
       });
     } catch (err) {
