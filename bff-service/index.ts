@@ -1,57 +1,123 @@
-import { createServer, request as requestHTTP } from 'node:http';
-import { request as requestHTTPS } from 'node:https';
 import 'dotenv/config';
+
+import axios from 'axios';
+import { createServer, RequestListener } from 'node:http';
 
 const port = 4000;
 
-const getProtocolFromUrl = (url: string): 'http' | 'https' => {
-  return url?.split(':')[0] as 'http' | 'https';
-};
+const useCache = (next: RequestListener): RequestListener => {
+  let cache: { date: number; data: unknown } = {
+    date: null,
+    data: null,
+  };
 
-const getRequester = (protocol: 'http' | 'https') => {
-  if (protocol === 'http') {
-    return requestHTTP;
-  }
+  return async (req, res) => {
+    console.log(req.url)
 
-  return requestHTTPS;
-};
+    if (!req.url.startsWith('/products/products') || req.method !== 'GET') {
+      await next(req, res);
+      return;
+    }
 
-createServer((req, res) => {
-  const url = req.url;
-  const [, service, ...restUrl] = url?.split('/');
-  const serviceUrl = process.env[service];
+    const { date, data } = cache;
 
-  if (!serviceUrl) {
-    res.writeHead(502, { 'Content-Type': 'text/plain' });
-    res.end('Cannot process request');
-    return;
-  }
+    const currentDate = Date.now();
 
-  const protocol = getProtocolFromUrl(serviceUrl);
+    console.log('IN cache module')
 
-  const serviceRequest = getRequester(protocol)(
-    `${serviceUrl}/${restUrl.join('/')}`,
-    {
-      method: req.method,
-      headers: {
-        'Content-Type': ['PUT', 'GET'].includes(req.method)
-          ? 'application/json'
-          : null,
-        Authorization: req.headers['authorization'] ?? null,
-      },
-    },
-    (response) => {
-      res.writeHead(response.statusCode || 502, {
-        ...response.headers,
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': '*',
-        'Access-Control-Allow-Headers': '*',
+    if (date !== null && currentDate - date < 2 * 60 * 1000) {
+      console.log('in cache');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(data));
+      return;
+    }
+
+    const url = req.url;
+    const [, service, ...restUrl] = url?.split('/');
+    const serviceUrl = process.env[service];
+
+    if (!serviceUrl) {
+      res.writeHead(502, { 'Content-Type': 'text/plain' });
+      res.end('Cannot process request');
+      return;
+    }
+
+    let response;
+
+    try {
+      response = await axios.get(`${serviceUrl}/${restUrl.join('/')}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: req.headers['authorization'] ?? null,
+        },
       });
-      response.pipe(res).on('error', console.error);
-    },
-  );
+    } catch (err) {
+      // console.log(err);
+      console.log(err.response);
+      res.writeHead(err.response.status, err.response.headers);
+      res.end(JSON.stringify(err.response.data));
+      return;
+    }
 
-  req.pipe(serviceRequest);
-}).listen(port, () => {
+    cache = {
+      data: response.data,
+      date: Date.now(),
+    };
+
+    console.log(cache);
+
+    res.writeHead(response.status || 502, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': '*',
+      'Access-Control-Allow-Headers': '*',
+    });
+
+    res.end(JSON.stringify(response.data));
+  };
+};
+
+createServer(
+  useCache(async (req, res) => {
+    const url = req.url;
+    const [, service, ...restUrl] = url?.split('/');
+    const serviceUrl = process.env[service];
+
+    if (!serviceUrl) {
+      res.writeHead(502, { 'Content-Type': 'text/plain' });
+      res.end('Cannot process request');
+      return;
+    }
+
+    let response;
+
+    try {
+      response = await axios({
+        method: req.method,
+        headers: {
+          'Content-Type': ['PUT', 'GET'].includes(req.method)
+            ? 'application/json'
+            : null,
+          Authorization: req.headers['authorization'] ?? null,
+        },
+        url: `${serviceUrl}/${restUrl.join('/')}`,
+        data: req.method === 'PUT' ? req : undefined,
+      });
+    } catch (err) {
+      // console.log(err);
+      console.log(err.response);
+      res.writeHead(err.response.status, err.response.headers);
+      res.end(JSON.stringify(err.response.data));
+      return;
+    }
+
+    res.writeHead(response.status || 502, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': '*',
+      'Access-Control-Allow-Headers': '*',
+    });
+
+    res.end(JSON.stringify(response.data));
+  }),
+).listen(port, () => {
   console.log('Server is running on port 4000');
 });
