@@ -73,7 +73,12 @@ const useCache = (next: RequestListener): RequestListener => {
     const currentDate = Date.now();
 
     if (date !== null && currentDate - date < 2 * 60 * 1000) {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': '*',
+        'Access-Control-Allow-Headers': '*',
+      });
       res.end(JSON.stringify(data));
       return;
     }
@@ -81,6 +86,8 @@ const useCache = (next: RequestListener): RequestListener => {
     const url = req.url;
     const [, service, ...restUrl] = url?.split('/');
     const serviceUrl = process.env[service];
+
+    console.log(service);
 
     if (!serviceUrl) {
       res.writeHead(502, {
@@ -107,7 +114,11 @@ const useCache = (next: RequestListener): RequestListener => {
       });
     } catch (err) {
       res.writeHead(err.response.status, err.response.headers);
-      res.end(JSON.stringify(err.response.data));
+      res.end(
+        err.response.headers === 'text/plain'
+          ? err.response.data
+          : JSON.stringify(err.response.data),
+      );
       return;
     }
 
