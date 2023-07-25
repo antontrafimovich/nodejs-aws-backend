@@ -12,7 +12,7 @@ const useCache = (next: RequestListener): RequestListener => {
   };
 
   return async (req, res) => {
-    console.log(req.url)
+    console.log(req.url);
 
     if (!req.url.startsWith('/products/products') || req.method !== 'GET') {
       await next(req, res);
@@ -23,10 +23,7 @@ const useCache = (next: RequestListener): RequestListener => {
 
     const currentDate = Date.now();
 
-    console.log('IN cache module')
-
     if (date !== null && currentDate - date < 2 * 60 * 1000) {
-      console.log('in cache');
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(data));
       return;
@@ -52,8 +49,6 @@ const useCache = (next: RequestListener): RequestListener => {
         },
       });
     } catch (err) {
-      // console.log(err);
-      console.log(err.response);
       res.writeHead(err.response.status, err.response.headers);
       res.end(JSON.stringify(err.response.data));
       return;
@@ -63,8 +58,6 @@ const useCache = (next: RequestListener): RequestListener => {
       data: response.data,
       date: Date.now(),
     };
-
-    console.log(cache);
 
     res.writeHead(response.status || 502, {
       'Access-Control-Allow-Origin': '*',
@@ -103,8 +96,6 @@ createServer(
         data: req.method === 'PUT' ? req : undefined,
       });
     } catch (err) {
-      // console.log(err);
-      console.log(err.response);
       res.writeHead(err.response.status, err.response.headers);
       res.end(JSON.stringify(err.response.data));
       return;
