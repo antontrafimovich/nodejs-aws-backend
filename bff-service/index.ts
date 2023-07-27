@@ -5,6 +5,14 @@ import { createServer, RequestListener } from 'node:http';
 
 const port = 4000;
 
+const getResponseCommonHeaders = () => {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': '*',
+    'Access-Control-Allow-Headers': '*',
+  };
+};
+
 const useAuth = (next: RequestListener): RequestListener => {
   return async (req, res) => {
     if (req.method === 'OPTIONS') {
@@ -15,9 +23,7 @@ const useAuth = (next: RequestListener): RequestListener => {
     if (!req.headers['authorization']) {
       res.writeHead(401, {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': '*',
-        'Access-Control-Allow-Headers': '*',
+        ...getResponseCommonHeaders(),
       });
       res.end(
         JSON.stringify({
@@ -39,9 +45,7 @@ const useAuth = (next: RequestListener): RequestListener => {
     if (login !== 'antontrafimovich' || password !== 'TEST_PASSWORD') {
       res.writeHead(403, {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': '*',
-        'Access-Control-Allow-Headers': '*',
+        ...getResponseCommonHeaders(),
       });
       res.end(
         JSON.stringify({
@@ -75,9 +79,7 @@ const useCache = (next: RequestListener): RequestListener => {
     if (date !== null && currentDate - date < 2 * 60 * 1000) {
       res.writeHead(200, {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': '*',
-        'Access-Control-Allow-Headers': '*',
+        ...getResponseCommonHeaders(),
       });
       res.end(JSON.stringify(data));
       return;
@@ -92,9 +94,7 @@ const useCache = (next: RequestListener): RequestListener => {
     if (!serviceUrl) {
       res.writeHead(502, {
         'Content-Type': 'text/plain',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': '*',
-        'Access-Control-Allow-Headers': '*',
+        ...getResponseCommonHeaders(),
       });
       res.end('Cannot process request');
       return;
@@ -113,7 +113,10 @@ const useCache = (next: RequestListener): RequestListener => {
         },
       });
     } catch (err) {
-      res.writeHead(err.response.status, err.response.headers);
+      res.writeHead(err.response.status, {
+        ...err.response.headers,
+        ...getResponseCommonHeaders(),
+      });
       res.end(
         err.response.headers === 'text/plain'
           ? err.response.data
@@ -127,11 +130,7 @@ const useCache = (next: RequestListener): RequestListener => {
       date: Date.now(),
     };
 
-    res.writeHead(response.status || 502, {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': '*',
-      'Access-Control-Allow-Headers': '*',
-    });
+    res.writeHead(response.status || 502, getResponseCommonHeaders());
 
     res.end(JSON.stringify(response.data));
   };
@@ -145,7 +144,10 @@ createServer(
       const serviceUrl = process.env[service];
 
       if (!serviceUrl) {
-        res.writeHead(502, { 'Content-Type': 'text/plain' });
+        res.writeHead(502, {
+          'Content-Type': 'text/plain',
+          ...getResponseCommonHeaders(),
+        });
         res.end('Cannot process request');
         return;
       }
@@ -165,20 +167,19 @@ createServer(
           data: req.method === 'PUT' ? req : undefined,
         });
       } catch (err) {
-        res.writeHead(err.response.status, err.response.headers);
+        res.writeHead(err.response.status, {
+          ...err.response.headers,
+          ...getResponseCommonHeaders(),
+        });
         res.end(JSON.stringify(err.response.data));
         return;
       }
 
-      res.writeHead(response.status || 502, {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': '*',
-        'Access-Control-Allow-Headers': '*',
-      });
+      res.writeHead(response.status || 502, getResponseCommonHeaders());
 
       res.end(JSON.stringify(response.data));
     }),
   ),
 ).listen(port, () => {
-  console.log('Server is running on port 4000');
+  console.log(`Server is running on port ${port}`);
 });
