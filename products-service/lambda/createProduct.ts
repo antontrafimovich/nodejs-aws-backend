@@ -2,6 +2,7 @@ import { uid } from "uid";
 
 import { productsRepo, stocksRepo } from "../app";
 import { Product } from "../model/Product";
+import { getRandomPhotoUrl } from "../shared";
 
 type CreateProductRequestItem = Product & { count: number };
 
@@ -36,11 +37,24 @@ export const handler = async (event: any) => {
     };
   }
 
+  let photoUrl;
+
+  try {
+    photoUrl = await getRandomPhotoUrl();
+  } catch (err) {
+    return {
+      statusCode: 500,
+      headers: { "Content-Type": "text/plain" },
+      body: typeof err === "string" ? err : (err as Error).message,
+    };
+  }
+
   const newProduct: Product = {
     title: item.title,
     description: item.description ?? "",
     price: item.price ?? 0,
     id: uid(5),
+    image: photoUrl,
   };
 
   try {
