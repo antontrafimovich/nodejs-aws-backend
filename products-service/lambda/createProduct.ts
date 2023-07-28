@@ -40,7 +40,7 @@ export const handler = async (event: any) => {
   let photoUrl;
 
   try {
-    photoUrl = await getRandomPhotoUrl();
+    photoUrl = item.image || (await getRandomPhotoUrl());
   } catch (err) {
     return {
       statusCode: 500,

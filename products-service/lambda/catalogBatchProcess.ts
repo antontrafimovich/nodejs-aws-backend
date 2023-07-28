@@ -12,7 +12,7 @@ export const handler = async (event: any) => {
       const product = JSON.parse(record.body);
 
       const id = uuidv4();
-      const image = await getRandomPhotoUrl();
+      const image = product.image || (await getRandomPhotoUrl());
 
       await Promise.all([
         productsRepo.put({
