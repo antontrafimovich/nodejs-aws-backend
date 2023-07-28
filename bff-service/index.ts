@@ -158,20 +158,24 @@ createServer(
         response = await axios({
           method: req.method,
           headers: {
-            'Content-Type': ['PUT', 'GET'].includes(req.method)
+            'Content-Type': ['PUT', 'GET', 'POST'].includes(req.method)
               ? 'application/json'
               : null,
             Authorization: req.headers['authorization'] ?? null,
           },
           url: `${serviceUrl}/${restUrl.join('/')}`,
-          data: req.method === 'PUT' ? req : undefined,
+          data: ['GET', 'POST'].includes(req.method) ? req : undefined,
         });
       } catch (err) {
         res.writeHead(err.response.status, {
           ...err.response.headers,
           ...getResponseCommonHeaders(),
         });
-        res.end(JSON.stringify(err.response.data));
+        res.end(
+          err.response.headers === 'text/plain'
+            ? err.response.data
+            : JSON.stringify(err.response.data),
+        );
         return;
       }
 
