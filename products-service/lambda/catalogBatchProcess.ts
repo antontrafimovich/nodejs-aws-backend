@@ -1,7 +1,8 @@
 import { PublishCommand, SNSClient } from "@aws-sdk/client-sns";
-import { uid } from "uid";
+import { v4 as uuidv4 } from "uuid";
 
 import { productsRepo, stocksRepo } from "../app";
+import { getRandomPhotoUrl } from "../shared";
 
 const client = new SNSClient({ region: process.env.REGION });
 
@@ -10,7 +11,8 @@ export const handler = async (event: any) => {
     const promises = event.Records.map(async (record: any) => {
       const product = JSON.parse(record.body);
 
-      const id = uid(5);
+      const id = uuidv4();
+      const image = product.image || (await getRandomPhotoUrl());
 
       await Promise.all([
         productsRepo.put({
@@ -18,6 +20,7 @@ export const handler = async (event: any) => {
           title: product.title,
           price: parseFloat(product.price),
           description: product.description,
+          image,
         }),
         stocksRepo.put({ productId: id, count: parseInt(product.count) }),
       ]);
